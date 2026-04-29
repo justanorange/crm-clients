@@ -3,18 +3,11 @@ import InputText from 'primevue/inputtext';
 import Select from 'primevue/select';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
-import { useDebounceFn } from '@vueuse/core';
 
-defineProps<{
-  search: string;
-  statusFilter: string;
-}>();
+const search = defineModel<string>('search');
+const status = defineModel<string>('status');
 
-const emit = defineEmits<{
-  'update:search': [value: string];
-  'update:status': [value: string];
-  'reset': [];
-}>();
+const emit = defineEmits(['reset']);
 
 const statusOptions = [
   { label: 'Все', value: '' },
@@ -22,16 +15,6 @@ const statusOptions = [
   { label: 'Активный', value: 'active' },
   { label: 'Заблокирован', value: 'blocked' },
 ];
-
-const handleSearch = useDebounceFn((value: string | undefined) => {
-  const trimmedValue = value?.trim() || '';
-  
-  if (trimmedValue.length <= 1) {
-    emit('update:search', '');
-  } else {
-    emit('update:search', trimmedValue);
-  }
-}, 500);
 </script>
 
 <template>
@@ -43,8 +26,7 @@ const handleSearch = useDebounceFn((value: string | undefined) => {
           <InputText
             id="search"
             placeholder="Имя или email"
-            :model-value="search"
-            @update:model-value="handleSearch($event)"
+            v-model.trim="search"
             class="w-full"
           />
         </div>
@@ -52,8 +34,7 @@ const handleSearch = useDebounceFn((value: string | undefined) => {
           <label class="block text-sm font-medium mb-2" for="status">Статус</label>
           <Select
             id="status"
-            :model-value="statusFilter"
-            @update:model-value="$emit('update:status', $event)"
+            v-model="status"
             :options="statusOptions"
             optionLabel="label"
             optionValue="value"
@@ -68,7 +49,7 @@ const handleSearch = useDebounceFn((value: string | undefined) => {
             icon="pi pi-times"
             @click="$emit('reset')"
             class="w-full"
-            :disabled="!search && !statusFilter"
+            :disabled="!search && !status"
           />
         </div>
       </div>

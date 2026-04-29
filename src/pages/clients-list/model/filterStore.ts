@@ -5,16 +5,16 @@ export const useFilterStore = defineStore(
   'filters',
   () => {
     const search = ref('');
-    const statusFilter = ref('');
+    const status = ref('');
 
     const resetFilters = () => {
       search.value = '';
-      statusFilter.value = '';
+      status.value = '';
     };
 
     return {
       search,
-      statusFilter,
+      status,
       resetFilters,
     };
   },

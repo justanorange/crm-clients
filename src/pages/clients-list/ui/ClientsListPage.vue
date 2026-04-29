@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { onMounted, ref, watch, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { useRouter } from 'vue-router';
 import Toast from 'primevue/toast';
 import Button from 'primevue/button';
 import ProgressSpinner from 'primevue/progressspinner';
+import { useDebounceFn } from '@vueuse/core';
 
 import { useClientStore, type Client } from '@/entities/client';
 import { useFilterStore } from '../model/filterStore';
@@ -21,19 +22,30 @@ const router = useRouter();
 const showDeleteConfirm = ref(false);
 const currentClient = ref<Client | null>(null);
 
-const filteredClients = computed(() => {
-  return store.clients.filter(c => {
-    const matchSearch =
-      !filterStore.search ||
-      c.name.toLowerCase().includes(filterStore.search.toLowerCase()) ||
-      c.email.toLowerCase().includes(filterStore.search.toLowerCase());
-    const matchStatus = !filterStore.statusFilter || c.status === filterStore.statusFilter;
-    return matchSearch && matchStatus;
-  });
+const handleSearchChange = useDebounceFn(() => {
+  store.searchClients(filterStore.search, filterStore.status);
+}, 1000);
+
+watch(
+  () => filterStore.search,
+  () => {
+    handleSearchChange();
+  }
+);
+
+watch(
+  () => filterStore.status,
+  () => {
+    store.searchClients(filterStore.search, filterStore.status);
+  }
+);
+
+const isFilterSet = computed(() => {
+  return filterStore.search !== '' || filterStore.status !== '';
 });
 
 onMounted(() => {
-  store.fetchClients();
+  store.searchClients(filterStore.search, filterStore.status);
 
   if (router.currentRoute.value.query.success) {
     toast.add({
@@ -98,27 +110,25 @@ const confirmDelete = async () => {
   </div>
 
   <ClientsFilter
-    :search="filterStore.search"
-    :status-filter="filterStore.statusFilter"
-    @update:search="filterStore.search = $event"
-    @update:status="filterStore.statusFilter = $event"
+    v-model:search="filterStore.search"
+    v-model:status="filterStore.status"
     @reset="resetFilters"
     class="mb-4"
   />
 
   <ClientsTable
-    v-if="filteredClients.length > 0 && store.clients.length > 0"
-    :clients="filteredClients"
+    v-if="store.clients.length > 0"
+    :clients="store.clients"
     :loading="store.isLoading"
     @edit="editClient"
     @delete="deleteClient"
   />
 
-  <div v-if="store.isLoading" class="text-center py-8">
+  <div v-if="store.clients.length === 0 && store.isLoading" class="text-center py-8">
     <ProgressSpinner />
   </div>
 
-  <div v-if="!store.isLoading && store.clients.length === 0" class="text-center py-8 text-gray-500">
+  <div v-if="!store.isLoading && store.clients.length === 0 && !isFilterSet" class="text-center py-8 text-gray-500">
     <div>Пока ни одного клиента не создано</div>
     <div>
       <Button
@@ -130,14 +140,13 @@ const confirmDelete = async () => {
     </div>
   </div>
 
-  <div v-else-if="!store.isLoading && filteredClients.length === 0 && store.clients.length > 0" class="text-center py-8 text-gray-500">
+  <div v-else-if="!store.isLoading && store.clients.length === 0 && isFilterSet" class="text-center py-8 text-gray-500">
     Клиентов, удовлетворяющих фильтрам, не найдено
   </div>
 
   <DeleteClientModal
-    :model-value="showDeleteConfirm"
+    v-model="showDeleteConfirm"
     :client="currentClient"
-    @update:model-value="showDeleteConfirm = $event"
     @cancel="showDeleteConfirm = false"
     @confirm="confirmDelete"
   />

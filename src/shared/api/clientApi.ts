@@ -21,6 +21,21 @@ export const clientApi = {
     return client;
   },
 
+  async searchClients(searchTerm: string, status: string) {
+    await delay();
+    return {
+      data: clients.filter(c => {
+        const matchSearch =
+          !searchTerm ||
+          c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          c.email.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchStatus = !status || c.status === status;
+        return matchSearch && matchStatus;
+      }),
+      total: clients.length,
+    };
+  },
+
   async createClient(data: CreateClientDTO) {
     await delay();
     const id = Math.max(0, ...clients.map(c => c.id)) + 1;

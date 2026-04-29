@@ -4,13 +4,16 @@ import Button from 'primevue/button';
 
 import type { Client } from '@/entities/client';
 
+const model = defineModel ({
+  type: Boolean,
+  required: true,
+});
+
 defineProps<{
-  modelValue: boolean;
   client: Client | null;
 }>();
 
 defineEmits<{
-  'update:modelValue': [value: boolean];
   'cancel': [];
   'confirm': [];
 }>();
@@ -18,11 +21,11 @@ defineEmits<{
 
 <template>
   <Dialog
-    :visible="modelValue"
+    :visible="model"
     header="Удалить клиента"
     :modal="true"
     class="max-w-100 w-full"
-    @update:visible="$emit('update:modelValue', $event)"
+    v-model="model"
   >
     <p class="mb-2">Клиент "{{ client?.name }}" будет удалён.</p>
     <p class="text-sm text-gray-500 mb-6">Это действие нельзя отменить.</p>

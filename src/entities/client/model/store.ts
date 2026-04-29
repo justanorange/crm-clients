@@ -34,6 +34,21 @@ export const useClientStore = defineStore('clients', () => {
     }
   }
 
+  async function searchClients(searchTerm: string, status: string) {
+    isLoading.value = true;
+    error.value = null;
+
+    try {
+      const response = await clientApi.searchClients(searchTerm, status);
+      clients.value = response.data;
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Ошибка поиска клиентов';
+      console.error(error.value);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   async function createClient(data: CreateClientDTO) {
     isLoading.value = true;
     error.value = null;
@@ -93,6 +108,7 @@ export const useClientStore = defineStore('clients', () => {
 
     fetchClients,
     fetchClient,
+    searchClients,
     createClient,
     updateClient,
     deleteClient,
